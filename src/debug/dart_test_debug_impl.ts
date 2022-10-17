@@ -84,7 +84,7 @@ export class DartTestDebugSession extends DartDebugSession {
 			allArgs = allArgs.concat(args.toolArgs);
 
 		if (args.program)
-			allArgs.push(this.sourceFileForArgs(args));
+			allArgs.push(args.program);
 
 		if (args.args)
 			allArgs = allArgs.concat(args.args);
@@ -243,7 +243,7 @@ export class DartTestDebugSession extends DartDebugSession {
 		if (suitePath) {
 			this.sendEvent(new Event(
 				"dart.testNotification",
-				notification ,
+				notification,
 			));
 		}
 	}

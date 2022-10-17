@@ -351,10 +351,6 @@ export class DartDebugSession extends DebugSession {
 		}
 	}
 
-	protected sourceFileForArgs(args: DartLaunchArgs): string {
-		return args.cwd ? path.relative(args.cwd, args.program!) : args.program!;
-	}
-
 	protected async spawnProcess(args: DartLaunchArgs): Promise<SpawnedProcess> {
 		let dartPath = path.join(args.dartSdkPath, dartVMPath);
 		const execution = this.buildExecutionInfo(dartPath, args);
@@ -445,7 +441,7 @@ export class DartDebugSession extends DebugSession {
 		if (args.toolArgs)
 			allArgs = allArgs.concat(args.toolArgs);
 
-		allArgs.push(this.sourceFileForArgs(args));
+		allArgs.push(args.program!);
 
 		if (args.args)
 			allArgs = allArgs.concat(args.args);

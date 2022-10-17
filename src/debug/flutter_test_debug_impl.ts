@@ -37,7 +37,7 @@ export class FlutterTestDebugSession extends DartTestDebugSession {
 			allArgs = allArgs.concat(args.args);
 
 		if (args.program)
-			allArgs.push(this.sourceFileForArgs(args));
+			allArgs.push(args.program);
 
 		const logger = new DebugAdapterLogger(this, LogCategory.FlutterTest);
 		return this.createRunner(execution.executable, args.cwd, allArgs, args.env, args.flutterTestLogFile, logger, args.maxLogLineLength);

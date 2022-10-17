@@ -240,11 +240,7 @@ export class FlutterDebugSession extends DartDebugSession {
 		if (mode === RunMode.Run || args.program) {
 			if (!args.omitTargetFlag)
 				allArgs.push("--target");
-			if (args.program!.startsWith("//")) {
-				allArgs.push(args.program!);
-			} else {
-				allArgs.push(this.sourceFileForArgs(args));
-			}
+			allArgs.push(args.program!);
 		}
 
 		if (args.args)
