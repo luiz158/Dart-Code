@@ -9,7 +9,7 @@ import { faint } from "../../../shared/utils/colors";
 import { fsPath } from "../../../shared/utils/fs";
 import { resolvedPromise, waitFor } from "../../../shared/utils/promises";
 import { DartDebugClient } from "../../dart_debug_client";
-import { createDebugClient, ensureFrameCategories, ensureMapEntry, ensureNoVariable, ensureServiceExtensionValue, ensureVariable, ensureVariableWithIndex, flutterTestDeviceId, flutterTestDeviceIsWeb, isExternalPackage, isLocalPackage, isSdkFrame, isUserCode, killFlutterTester, startDebugger, waitAllThrowIfTerminates } from "../../debug_helpers";
+import { createDebugClient, ensureFrameCategories, ensureMapEntry, ensureNoVariable, ensureServiceExtensionValue, ensureSourceName, ensureVariable, ensureVariableWithIndex, flutterTestDeviceId, flutterTestDeviceIsWeb, isExternalPackage, isLocalPackage, isSdkFrame, isUserCode, killFlutterTester, startDebugger, waitAllThrowIfTerminates } from "../../debug_helpers";
 import { activate, customScriptExt, defer, deferUntilLast, delay, ensureArrayContainsArray, ensureHasRunWithArgsStarting, extApi, flutterHelloWorldBrokenFile, flutterHelloWorldFolder, flutterHelloWorldGettersFile, flutterHelloWorldHttpFile, flutterHelloWorldLocalPackageFile, flutterHelloWorldMainFile, flutterHelloWorldStack60File, flutterHelloWorldThrowInExternalPackageFile, flutterHelloWorldThrowInLocalPackageFile, flutterHelloWorldThrowInSdkFile, getDefinition, getLaunchConfiguration, getResolvedDebugConfiguration, makeTrivialChangeToFileDirectly, myPackageFolder, openFile, positionOf, prepareHasRunFile, saveTrivialChangeToFile, sb, setConfigForTest, uriFor, waitForResult, watchPromise } from "../../helpers";
 
 const deviceName = flutterTestDeviceIsWeb ? "Chrome" : "Flutter test device";
@@ -124,7 +124,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 	it("runs and remains active until told to quit", async () => {
 		const config = await startDebugger(dc, flutterHelloWorldMainFile);
 		await waitAllThrowIfTerminates(dc,
-			dc.assertOutputContains("console", `Launching lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
+			dc.assertOutputContains("console", `lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
 			dc.debuggerReady(),
 			dc.configurationSequence(),
 			dc.launch(config),
@@ -521,7 +521,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 		const config = await startDebugger(dc, flutterHelloWorldMainFile);
 		await waitAllThrowIfTerminates(dc,
 			dc.debuggerReady(),
-			watchPromise("assertOutputContains", dc.assertOutputContains("console", `Launching lib${path.sep}main.dart on ${deviceName} in debug mode...\n`)),
+			watchPromise("assertOutputContains", dc.assertOutputContains("console", `lib${path.sep}main.dart on ${deviceName} in debug mode...\n`)),
 			watchPromise("configurationSequence", dc.configurationSequence()),
 			watchPromise("launch", dc.launch(config)),
 		);
@@ -552,7 +552,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 			customToolReplacesArgs: 0,
 		});
 		await waitAllThrowIfTerminates(dc,
-			dc.assertOutputContains("console", `Launching lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
+			dc.assertOutputContains("console", `lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
 			dc.debuggerReady(),
 			dc.configurationSequence(),
 			dc.launch(config),
@@ -577,7 +577,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 			toolArgs: ["run", "--flavor", "fake-flavor", "--start-paused", "--machine"],
 		});
 		await waitAllThrowIfTerminates(dc,
-			dc.assertOutputContains("console", `Launching lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
+			dc.assertOutputContains("console", `lib${path.sep}main.dart on ${deviceName} in debug mode...\n`),
 			dc.debuggerReady(),
 			dc.configurationSequence(),
 			dc.launch(config),
@@ -612,7 +612,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 		else
 			assert.equal(frames[0].name, "build");
 		assert.equal(frames[0].source!.path, expectedLocation.path);
-		assert.equal(frames[0].source!.name, "package:flutter_hello_world/main.dart");
+		ensureSourceName(frames[0].source, "package:flutter_hello_world/main.dart", "lib/main.dart");
 
 		await watchPromise("stops_at_a_breakpoint->resume", dc.resume());
 
@@ -639,7 +639,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 						else
 							assert.equal(frames[0].name, "build");
 						assert.equal(frames[0].source!.path, expectedLocation.path);
-						assert.equal(frames[0].source!.name, "package:flutter_hello_world/main.dart");
+						ensureSourceName(frames[0].source, "package:flutter_hello_world/main.dart", "lib/main.dart");
 					})
 					.then(() => watchPromise(`stops_at_a_breakpoint->reload:${i}->resume`, dc.resume())),
 				watchPromise(`stops_at_a_breakpoint->reload:${i}->hotReload:breakpoint`, dc.hotReload()),
@@ -1043,7 +1043,8 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 			if (expectation === resolvedPromise)
 				waitAfterLaunch = 20000;
 
-			await waitAllThrowIfTerminates(dc,
+			await waitAllThrowIfTerminates(
+				dc,
 				dc.waitForEvent("initialized")
 					.then(() => dc.setBreakpointsRequest({
 						// positionOf is 0-based, but seems to want 1-based
@@ -1606,7 +1607,7 @@ describe(`flutter run debugger (launch on ${flutterTestDeviceId})`, () => {
 				"writes_failure_output->assertOutputContains",
 				dc.assertOutputContains(undefined, "_throwAnException")
 					.then((event) => {
-						assert.equal(event.body.source!.name, "package:flutter_hello_world/broken.dart");
+						ensureSourceName(event.body.source, "package:flutter_hello_world/broken.dart", "lib/broken.dart");
 						assert.equal(event.body.source!.path, fsPath(flutterHelloWorldBrokenFile));
 						assert.equal(event.body.line, positionOf("^Oops").line + 1); // positionOf is 0-based, but seems to want 1-based
 						assert.equal(event.body.column, 5);

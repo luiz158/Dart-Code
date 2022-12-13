@@ -12,6 +12,7 @@ import { DebuggerType, VmServiceExtension } from "../../shared/enums";
 import { Device } from "../../shared/flutter/daemon_interfaces";
 import { getFutterWebRenderer } from "../../shared/flutter/utils";
 import { DartWorkspaceContext, IFlutterDaemon, Logger } from "../../shared/interfaces";
+import { PackageMap } from "../../shared/pub/package_map";
 import { TestModel } from "../../shared/test/test_model";
 import { getPackageTestCapabilities } from "../../shared/test/version";
 import { filenameSafe, isWebDevice } from "../../shared/utils";
@@ -621,6 +622,15 @@ export class DebugConfigProvider implements DebugConfigurationProvider {
 			case DebuggerType.FlutterTest:
 				args = args.concat(await this.buildFlutterTestToolArgs(debugConfig, conf));
 				break;
+		}
+
+		// TOOD(dantup): Tidy this up. Should we do it only if we know there are symlinks?
+		if (debugType === DebuggerType.Flutter || debugType === DebuggerType.FlutterTest) {
+			const programPath = debugConfig.program ?? debugConfig.cwd;
+			const packageFile = PackageMap.findPackagesFile(programPath);
+			if (packageFile) {
+				this.addArgsIfNotExist(args, "--packages", packageFile);
+			}
 		}
 
 		return args;
